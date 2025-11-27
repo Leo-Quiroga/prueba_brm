@@ -1,10 +1,10 @@
 
 const router = require('express').Router();
-const authController = require('../controllers/purchase.controller');
+const controller = require('../controllers/purchase.controller');
 const auth = require('../middlewares/auth');
 
-router.post('/', auth(['admin', 'user']), authController.createPurchase);
-router.get('/', auth(['admin']), authController.getAllPurchases);
-router.get('/:id', auth(['admin', 'user']), authController.getPurchaseById);
+router.post('/', auth(['Administrador', 'Cliente']), controller.buy);
+router.get('/', auth(['Administrador']), controller.getAll);
+router.get('/:id', auth(['Administrador', 'Cliente']), controller.getById);
 
 module.exports = router;

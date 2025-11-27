@@ -89,3 +89,26 @@ exports.getAll = async (req, res) => {
         res.status(500).json({ message: 'Error obteniendo compras' });
     }
 }
+
+exports.getById = async (req, res) => {
+    try {
+        const purchase = await Purchase.findByPk(req.params.id, {
+            include: [
+                { model: User },
+                {
+                    model: PurchaseItem,
+                    include: [ Product ]
+                }
+            ]
+        });
+
+        if (!purchase) {
+            return res.status(404).json({ message: "Compra no encontrada" });
+        }
+
+        res.json(purchase);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error obteniendo la compra' });
+    }
+};

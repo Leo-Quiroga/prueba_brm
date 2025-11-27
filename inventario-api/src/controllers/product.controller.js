@@ -41,15 +41,46 @@ exports.update = async (req, res) => {
         if (!req.body || Object.keys(req.body).length === 0) {
             return res.status(400).json({ message: 'Datos para actualizar inválidos' });
         }
-        const [updated] = await Product.update(req.body, { where: { id: req.params.id } });
-        if (updated === 0) return res.status(404).json({ message: 'Producto no encontrado' });
-        const prod = await Product.findByPk(req.params.id);
-        res.json(prod);
+
+        // Buscar producto antes de actualizar
+        const existingProduct = await Product.findByPk(req.params.id);
+        if (!existingProduct) {
+            return res.status(404).json({ message: 'Producto no encontrado' });
+        }
+
+        // Guardamos los valores originales para comparar
+        const originalData = existingProduct.toJSON();
+
+        // Ejecutar actualización
+        await existingProduct.update(req.body);
+
+        // Obtener nuevo estado del producto
+        const updatedProduct = existingProduct.toJSON();
+
+        // Comparar campos actualizados
+        const updatedFields = {};
+        for (const key in req.body) {
+            if (originalData[key] !== updatedProduct[key]) {
+                updatedFields[key] = {
+                    antes: originalData[key],
+                    ahora: updatedProduct[key]
+                };
+            }
+        }
+
+        return res.json({
+            message: `Producto con ID ${req.params.id} actualizado correctamente`,
+            camposActualizados: req.body,
+            productoActualizado: updatedProduct.name
+        });
+
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Error al actualizar producto' });
     }
 };
+
+
 
 exports.delete = async (req, res) => {
     try {
