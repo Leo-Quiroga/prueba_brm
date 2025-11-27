@@ -1,14 +1,15 @@
 
+// Controlador para manejar compras en el sistema de inventario
 const {Purchase, PurchaseItem, Product, User} = require('../models');
 
 exports.buy = async (req, res) => {
     try {
         const { items } = req.body;
         if (!req.user || !req.user.id) {
-            return res.status(401).json({ message: 'Usuario no autenticado' });
+            return res.status(401).json({ message: "Usuario no autenticado" });
         }
         if (!Array.isArray(items) || items.length === 0) {
-            return res.status(400).json({ message: 'Se requieren items de compra' });
+            return res.status(400).json({ message: "Se requieren items de compra" });
         }
         
         const transaction = await Purchase.sequelize.transaction();
@@ -42,12 +43,12 @@ exports.buy = async (req, res) => {
                 total += product.price * quantity;
                 await product.update({ stock: product.stock - quantity }, { transaction });
             }
-
+            // Crear la compra y los items asociados
             const purchase = await Purchase.create({
                 userId: req.user.id,
                 total
             }, { transaction });
-
+            
             for (const item of items) {
                 const product = await Product.findByPk(item.productId, { transaction });
                 await PurchaseItem.create({
@@ -70,6 +71,7 @@ exports.buy = async (req, res) => {
     }
 };
 
+// Obtener todas las compras con detalles de usuario y items
 exports.getAll = async (req, res) => {
     try {
         const purchases = await Purchase.findAll({
