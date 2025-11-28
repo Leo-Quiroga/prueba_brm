@@ -1,4 +1,4 @@
-// //Define las rutas para la gestión de productos y las protege con middleware de autenticación y autorización.
+//Define las rutas para la gestión de productos y las protege con middleware de autenticación y autorización.
 
 const router = require("express").Router();
 const controller = require("../controllers/product.controller");

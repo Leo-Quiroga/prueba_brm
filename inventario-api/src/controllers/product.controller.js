@@ -1,16 +1,25 @@
-//Controlador para gestionar productos en el inventario
+// //Controlador para gestionar productos en el inventario
 
 const { Product } = require('../models');
 
 exports.create = async (req, res) => {
     try {
-        if (!req.body || Object.keys(req.body).length === 0) {
-            return res.status(400).json({ message: 'Datos de producto inválidos' });
+        const { productionLot, name, price, stock, entryDate } = req.body;
+
+        // Validaciones (Punto Extra)
+        if (!productionLot || !name || !entryDate) {
+            return res.status(400).json({ message: 'Faltan campos obligatorios' });
         }
+        if (price < 0) return res.status(400).json({ message: 'El precio no puede ser negativo' });
+        if (stock < 0) return res.status(400).json({ message: 'El stock no puede ser negativo' });
+
         const prod = await Product.create(req.body);
         res.status(201).json(prod);
     } catch (err) {
         console.error(err);
+        if(err.name === 'SequelizeUniqueConstraintError') {
+             return res.status(400).json({ message: 'El número de lote ya existe' });
+        }
         res.status(500).json({ message: 'Error al crear producto' });
     }
 };
@@ -20,76 +29,60 @@ exports.getAll = async (_, res) => {
         const products = await Product.findAll();
         res.json(products);
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Error al obtener productos' });
+        res.status(500).json({ message: 'Error server' });
     }
 };
 
 exports.getById = async (req, res) => {
     try {
         const prod = await Product.findByPk(req.params.id);
-        if (!prod) return res.status(404).json({ message: 'Producto no encontrado' });
+        if (!prod) return res.status(404).json({ message: 'No encontrado' });
         res.json(prod);
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Error al obtener producto' });
+        res.status(500).json({ message: 'Error server' });
     }
 };
 
 exports.update = async (req, res) => {
     try {
         if (!req.body || Object.keys(req.body).length === 0) {
-            return res.status(400).json({ message: 'Datos para actualizar inválidos' });
+            return res.status(400).json({ message: 'Datos vacíos' });
         }
-
-        // Buscar producto antes de actualizar
+        
         const existingProduct = await Product.findByPk(req.params.id);
-        if (!existingProduct) {
-            return res.status(404).json({ message: 'Producto no encontrado' });
-        }
+        if (!existingProduct) return res.status(404).json({ message: 'Producto no encontrado' });
 
-        // Guardamos los valores originales para comparar
+        // Validaciones en update también
+        if (req.body.stock !== undefined && req.body.stock < 0) return res.status(400).json({ message: 'Stock inválido' });
+        if (req.body.price !== undefined && req.body.price < 0) return res.status(400).json({ message: 'Precio inválido' });
+
         const originalData = existingProduct.toJSON();
-
-        // Ejecutar actualización
         await existingProduct.update(req.body);
-
-        // Obtener nuevo estado del producto
         const updatedProduct = existingProduct.toJSON();
 
-        // Comparar campos actualizados
         const updatedFields = {};
         for (const key in req.body) {
             if (originalData[key] !== updatedProduct[key]) {
-                updatedFields[key] = {
-                    antes: originalData[key],
-                    ahora: updatedProduct[key]
-                };
+                updatedFields[key] = { antes: originalData[key], ahora: updatedProduct[key] };
             }
         }
 
         return res.json({
-            message: `Producto con ID ${req.params.id} actualizado correctamente`,
-            camposActualizados: req.body,
-            productoActualizado: updatedProduct.name
+            message: `Producto actualizado`,
+            cambios: updatedFields
         });
-
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: 'Error al actualizar producto' });
+        res.status(500).json({ message: 'Error al actualizar' });
     }
 };
-
-
 
 exports.delete = async (req, res) => {
     try {
         const deleted = await Product.destroy({ where: { id: req.params.id } });
-        if (deleted === 0) return res.status(404).json({ message: 'Producto no encontrado' });
+        if (!deleted) return res.status(404).json({ message: 'Producto no encontrado' });
         res.json({ message: 'Producto eliminado' });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Error al eliminar producto' });
+        res.status(500).json({ message: 'Error al eliminar' });
     }
 };
-
