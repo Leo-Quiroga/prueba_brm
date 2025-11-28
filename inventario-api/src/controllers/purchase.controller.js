@@ -94,7 +94,7 @@ exports.getAll = async (req, res) => {
             order: [['createdAt', 'DESC']]
         });
 
-        // Transformamos los datos para cumplir el requisito de visualización:
+        // Transforma los datos para cumplir el requisito de visualización:
         // "fecha, cliente, productos comprados, cantidad por producto, precio total"
         const formattedResponse = purchases.map(p => ({
             id: p.id,
